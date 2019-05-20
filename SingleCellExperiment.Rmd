@@ -136,6 +136,89 @@ sce <- scater::normalize(sce)
 sizeFactors(sce)
 ```
 
+### The `reducedDims` Slot
+The reducedDims slot is a new addition which is specially designed to store the reduced dimensionality representations of primary data, such as PCA, tSNE, UMAP, and others.
+
+`reducedDims` slot: contains a list of numeric matrix entries which describe dimensionality reduced representations of the primary data, such that rows represent the columns of the primary data (aka the samples/cells), and columns represent the dimensions
+Most importantly, just like the assays slot, the reducedDims slot can hold a list of many entries. So, it can hold a PCA, TSNE, and UMAP representation of a given dataset all within the reducedDims slot.
+
+In our example, we can calculate a PCA representation of our data as follows using the scater package function `runPCA()`. We see that the sce now shows a new reducedDim and that the accessor `reducedDim()` produces the results of running PCA on the normalized data from `logcounts(sce)`.
+
+```{r}
+sce <- scater::runPCA(sce)
+reducedDim(sce, "PCA")
+```
+
+From this, we can also calculate a tSNE representation using the scater package function runTSNE(), and see that it can be seen both in the default view of sce and via accession:
+
+```{r}
+sce <- scater::runTSNE(sce, perplexity = 0.1)
+reducedDim(sce, "TSNE")
+```
+
+Now, say we have a different dimensionality reduction approach which has not yet been implemented with `SingleCellExperiment` objects in mind. For example, let’s say we want to try the `umap()` function as implemented in the `uwot` package (which is a much faster version of the default `umap` implementation currently in `scater`).
+
+```{r}
+u <- uwot::umap(t(logcounts(sce)), n_neighbors = 2)
+reducedDim(sce, "UMAP_uwot") <- u
+reducedDim(sce, "UMAP_uwot")
+```
+
+# Working with large data sets
+
+### Package Requirements
+These packages will be required for working through the vignette, and can be installed by running the code below:
+
+```{r message=FALSE}
+data_pkg <- c("HCAData", "ExperimentHub")
+calc_pkg <- c("scater", "scran", "mbkmeans", "BiocSingular", "uwot")
+visl_pkg <- c("RColorBrewer", "pheatmap", "ggplot2")
+infr_pkg <- c("DelayedMatrixStats", "pryr", "BiocParallel")
+
+# Do once
+# BiocManager::install(c(data_pkg, calc_pkg, visl_pkg, infr_pkg))
+
+library(HCAData)
+library(ExperimentHub)
+library(scater)
+library(scran)
+library(uwot)
+library(BiocSingular)
+library(mbkmeans)
+library(RColorBrewer)
+library(pheatmap)
+library(ggplot2)
+library(DelayedMatrixStats)
+library(pryr)
+library(BiocParallel)
+```
+
+## Loading the Data
+Here, we use one of the Human Cell Atlas preview datasets available in the HCAData Bioconductor package, the ica_bone_marrow dataset.
+
+```{r}
+eh <- ExperimentHub()
+query(eh, "HCAData")
+##change to brain
+sce <- HCAData("ica_bone_marrow")
+```
+
+In order to make the compilation time more manageable, here we will subsample the data to a more reasonable size. For our use, we will go down to 5000 cells.
+
+```{r}
+set.seed(1234)
+subsample <- sample(ncol(sce), 5000) # super downsample temporary
+sce <- sce[, subsample]
+```
+
+One small bit of housekeeping - the initial gene IDs used as rownames for sce are in Ensembl Gene ID format. To make the gene ids human-readable, we convert the rownames to gene symbol. In this case, the mapping between Ensembl Gene ID’s and symbols is kept in the rowData slot of our sce, and so we overwrite the current rownames as follows:
+
+```{r}
+rownames(sce) <- rowData(sce)$Symbol
+```
+
+
+
 
 
 
