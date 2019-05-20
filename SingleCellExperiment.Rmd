@@ -1,0 +1,29 @@
+---
+title: "SingleCellExperiment"
+author: "AY"
+date: "5/20/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+title: "Orchestrating Single-Cell Analysis with Bioconductor"
+output: html_notebook
+---
+
+# Needed packages
+
+```{r, message=FALSE}
+# BiocManager::install("SingleCellExperiment")
+# BiocManager::install(c("scater", "scran", "uwot"))
+
+library(SingleCellExperiment)
+```
+
+The `sce` Object:
+
+![Figure 1. Overview of the SingleCellExperiment object](images/singlecellexperiment.png)
+
