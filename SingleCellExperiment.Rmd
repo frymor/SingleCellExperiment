@@ -217,12 +217,43 @@ One small bit of housekeeping - the initial gene IDs used as rownames for sce ar
 rownames(sce) <- rowData(sce)$Symbol
 ```
 
+## Preprocessing
+
+First, we use the scater package to compute a set of QC measures and filter out the low-quality samples.
+
+```{r}
+ctrl <- list(Mito = grep("^MT", rowData(sce)$Symbol)) 
+
+sce <- scater::calculateQCMetrics(sce, 
+                          feature_controls = ctrl,
+                          compact = TRUE, # return as nested DF
+                          BPPARAM = MulticoreParam(4))
+```
+
+The `compact` parameter put all theQC metric into a compact dataframe, which is smaller to view.
 
 
+#### Remove Damaged Cells
+Here we calculate which cells have a high proportion of mitocondrial reads, using it as a proxy for cell damage, and save the result into the metadata slot.
 
+```{r}
+high_mito <- isOutlier(colData(sce)$scater_qc$feature_control_Mito$pct_counts,
+                       nmads = 3, type = "higher")
+metadata(sce)$high_mito <- high_mito
+```
 
+The table below enumerates the cells which fail/pass this filter:
 
+```{r}
+table(metadata(sce)$high_mito)
+```
+We can then filter cells in our sce object on this basis.
 
+```{r}
+sce <- sce[, !metadata(sce)$high_mito]
+```
+
+This leaves "only" 4388 genes in the data set. 
 
 
 
